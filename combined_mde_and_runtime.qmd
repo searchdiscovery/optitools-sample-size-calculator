@@ -1,0 +1,66 @@
+---
+title: "Combined MDE & Runtime"
+format: 
+  html:
+    page-layout: custom
+server: shiny
+---
+
+```{r dummy to get autocomplete to work}
+library(shiny)
+```
+
+## Shiny Documents
+
+This Quarto document is made interactive using Shiny. Interactive documents allow readers to modify parameters and see the results immediately. Learn more about Shiny interactive documents at <https://quarto.org/docs/interactive/shiny/>.
+
+## Inputs and Outputs
+
+You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change. This demonstrates how a standard R plot can be made interactive:
+
+::: {.panel-tabset}
+
+## Traffic & Variations
+
+```{r}
+
+numericInput("avg_thirty_day", "Avg. Traffic over 30 days", min = 1, value = NULL)
+numericInput("base_cvr", "Baseline Conversion Rate (%)", min = 0, max = 100, value = NULL)
+numericInput("variants", "How many variations vs. control?", min = 1, max = 50, value = 1)
+```
+
+## Power, Confidence, and Tails
+
+```{r}
+sliderInput("confidence", "Desired Confidence Level", min = 50, max = 99, value = 95)
+sliderInput("power", "Desired Power Level", min = 50, max = 99, value = 80)
+radioButtons("tails", "One- or Two-tailed Test", c("One-tailed" = "one.sided", "Two-tailed" = "two.sided"))
+
+```
+
+:::
+```{r}
+#| panel: fill
+#| layout-ncol: 2
+textOutput("inputs")
+
+
+textOutput("powerPropOutput")
+```
+
+```{r}
+#| context: server
+output$inputs <- renderPrint(reactiveValuesToList(input))
+
+
+output$powerPropOutput <- renderPrint(power.prop.test(
+  n = input$avg_thirty_day
+  , p1 = input$base_cvr / 100
+  # , p2 = input$base_cvr / 100 * 1.1\
+  , p2 = NULL
+  , sig.level = 1 - (input$confidence / 100)
+  , power = input$power / 100
+  , alternative = input$tails
+  # , strict = FALSE
+))
+```
